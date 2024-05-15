@@ -1,0 +1,542 @@
+[
+    {
+        "id": "9cb7e68af6628fae",
+        "type": "tab",
+        "label": "Victron GPS from Starlink",
+        "disabled": false,
+        "info": "2024-05-15 brik2k@gmail.com\nThis flow retrieves gps coordinates and altitude from a local Starlink dish and publishes it to your Victron Connect instance through MQTT. \n\nThis flow does the following:\n 1. Uses freakent's dbus-mqtt-devices driver (https://github.com/freakent/dbus-mqtt-devices) to register a a 'starlink01' device with a gps service on the Victron dbus. \n 2. Uses node-red-contrib-grpc to send a grpc call to a local Starlink dish to retrieve gps data. See https://github.com/sparky8512/starlink-grpc-tools for how to enable pulling location data from Dishy.\n 3. Publishes the gps lat, long, and altitude to the Victron MQTT so it's logged and displayed on the Victron VRM Portal. \n \nThings to tweak:\n 1. The grpc .proto file configuration is probably a mess and should be cleaned up by someone who knows what they're doing.\n 2. Probably need to add some error handling to the grpc call process.",
+        "env": []
+    },
+    {
+        "id": "859feebe72423d1b",
+        "type": "grpc-call",
+        "z": "9cb7e68af6628fae",
+        "name": "Dishy",
+        "server": "a0543c07e585af09",
+        "service": "Device",
+        "method": "Handle",
+        "chain": "",
+        "key": "",
+        "x": 490,
+        "y": 560,
+        "wires": [
+            [
+                "222cae52f93def91",
+                "b1641c8d5cf1636e"
+            ]
+        ]
+    },
+    {
+        "id": "963da4bccc7acc04",
+        "type": "inject",
+        "z": "9cb7e68af6628fae",
+        "name": "",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 130,
+        "y": 560,
+        "wires": [
+            [
+                "ecd8191d8f3e4942"
+            ]
+        ]
+    },
+    {
+        "id": "ecd8191d8f3e4942",
+        "type": "function",
+        "z": "9cb7e68af6628fae",
+        "name": "Set Payload",
+        "func": "msg.payload = {get_location:{}}\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 310,
+        "y": 560,
+        "wires": [
+            [
+                "859feebe72423d1b"
+            ]
+        ]
+    },
+    {
+        "id": "d0c09f92054df5b9",
+        "type": "debug",
+        "z": "9cb7e68af6628fae",
+        "name": "debug 15",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 780,
+        "y": 700,
+        "wires": []
+    },
+    {
+        "id": "aaed3df1ddf9dae6",
+        "type": "mqtt out",
+        "z": "9cb7e68af6628fae",
+        "name": "",
+        "topic": "",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "2712849475d6de23",
+        "x": 770,
+        "y": 760,
+        "wires": []
+    },
+    {
+        "id": "222cae52f93def91",
+        "type": "function",
+        "z": "9cb7e68af6628fae",
+        "name": "Parse and send data",
+        "func": "const portalID = global.get('portalId');\nconst serviceID = flow.get('gps1Id');\nconst gpsdata = msg.payload;\n\nmsg.payload = {value: gpsdata.get_location.lla.lon};\nmsg.topic = \"W/\"+portalID+\"/gps/\"+serviceID+\"/Position/Longitude\";\nnode.send(msg);\n\nmsg.payload = {value: gpsdata.get_location.lla.lat};\nmsg.topic = \"W/\"+portalID+\"/gps/\"+serviceID+\"/Position/Latitude\";\nnode.send(msg);\n\nmsg.payload = {value: gpsdata.get_location.lla.alt};\nmsg.topic = \"W/\"+portalID+\"/gps/\"+serviceID+\"/Altitude\";\nnode.send(msg);\n\nmsg.payload = {value: 1};\nmsg.topic = \"W/\"+portalID+\"/gps/\"+serviceID+\"/Fix\";\nnode.send(msg);\n\n\nreturn null",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 470,
+        "y": 700,
+        "wires": [
+            [
+                "d0c09f92054df5b9",
+                "aaed3df1ddf9dae6"
+            ]
+        ]
+    },
+    {
+        "id": "b1641c8d5cf1636e",
+        "type": "debug",
+        "z": "9cb7e68af6628fae",
+        "name": "debug 16",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 740,
+        "y": 560,
+        "wires": []
+    },
+    {
+        "id": "41954ea44dfbf790",
+        "type": "mqtt in",
+        "z": "9cb7e68af6628fae",
+        "name": "",
+        "topic": "device/starlink01/DBus",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "2712849475d6de23",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 140,
+        "y": 40,
+        "wires": [
+            [
+                "63bc649ab80045b5"
+            ]
+        ]
+    },
+    {
+        "id": "63bc649ab80045b5",
+        "type": "change",
+        "z": "9cb7e68af6628fae",
+        "name": "save VRM ids",
+        "rules": [
+            {
+                "t": "set",
+                "p": "portalId",
+                "pt": "global",
+                "to": "payload.portalId",
+                "tot": "msg"
+            },
+            {
+                "t": "set",
+                "p": "gps1Id",
+                "pt": "flow",
+                "to": "payload.deviceInstance.gps1",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 440,
+        "y": 40,
+        "wires": [
+            [
+                "63dd2b506ffdbc16"
+            ]
+        ]
+    },
+    {
+        "id": "63dd2b506ffdbc16",
+        "type": "debug",
+        "z": "9cb7e68af6628fae",
+        "name": "debug",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 710,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "2d3ec41145f78c96",
+        "type": "inject",
+        "z": "9cb7e68af6628fae",
+        "name": "Register device",
+        "props": [],
+        "repeat": "86400",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "1",
+        "topic": "",
+        "x": 130,
+        "y": 120,
+        "wires": [
+            [
+                "5fa7695d94fec946"
+            ]
+        ]
+    },
+    {
+        "id": "d0bddade666a2573",
+        "type": "mqtt out",
+        "z": "9cb7e68af6628fae",
+        "name": "",
+        "topic": "",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "2712849475d6de23",
+        "x": 520,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "5fa7695d94fec946",
+        "type": "change",
+        "z": "9cb7e68af6628fae",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "{\t   \"clientId\":\"starlink01\",\t   \"connected\":1,\t   \"version\":\"v1.0.0\",\t   \"services\":{\"gps1\":\"gps\"}\t}",
+                "tot": "jsonata"
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "device/starlink01/Status",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 350,
+        "y": 120,
+        "wires": [
+            [
+                "d0bddade666a2573",
+                "0e397bac281cd871"
+            ]
+        ]
+    },
+    {
+        "id": "0e397bac281cd871",
+        "type": "debug",
+        "z": "9cb7e68af6628fae",
+        "name": "debug 17",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 530,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "58b13ef76d6a24d6",
+        "type": "inject",
+        "z": "9cb7e68af6628fae",
+        "name": "timer",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "120",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "1",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 90,
+        "y": 180,
+        "wires": [
+            [
+                "899a4f553fca8425"
+            ]
+        ]
+    },
+    {
+        "id": "899a4f553fca8425",
+        "type": "function",
+        "z": "9cb7e68af6628fae",
+        "name": "Check Status",
+        "func": "\nif (global.get('portalId') && flow.get('gps1Id')) {\n    node.status({fill: 'green', shape: 'dot', text:'Starlink GPS registerd'})\n    return [null, msg, null]\n} else {\n    node.status({fill: 'red', shape: 'ring', text:'Starlink GPS NOT registered!'})\n    node.warn(`variables not set ${global.get('portalId')} ${flow.get('gps1Id')} `)\n    return [msg, null, null]\n}\n",
+        "outputs": 3,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "// Code added here will be run when the\n// node is being stopped or re-deployed.\nnode.warn(\"stop detected, disconnecting device\")\nreturn [null, null, { payload: new Date().toJSON()}]",
+        "libs": [],
+        "x": 260,
+        "y": 180,
+        "wires": [
+            [
+                "c655b7abbb3f1a97",
+                "5fa7695d94fec946"
+            ],
+            [
+                "ecd8191d8f3e4942"
+            ],
+            [
+                "94bf399bbd925eef"
+            ]
+        ],
+        "inputLabels": [
+            "in"
+        ],
+        "outputLabels": [
+            "Register",
+            "Ready",
+            "Unregister"
+        ]
+    },
+    {
+        "id": "c655b7abbb3f1a97",
+        "type": "delay",
+        "z": "9cb7e68af6628fae",
+        "name": "",
+        "pauseType": "delay",
+        "timeout": "1",
+        "timeoutUnits": "minutes",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 500,
+        "y": 180,
+        "wires": [
+            [
+                "899a4f553fca8425"
+            ]
+        ]
+    },
+    {
+        "id": "842c4a2537e9d0db",
+        "type": "comment",
+        "z": "9cb7e68af6628fae",
+        "name": "Check Status",
+        "info": "Check status is a function node with three outputs.\n\n1) Message will be emiited from the 1st ouput if the device is not registerd and a device status message needs to be sent.\n\n2) Output 2 is triggered when the devide is regsitered and sensor readings can be sent to the dbus \n\n3) Output 3 is used when the function is about to be shutdown so the the device can be cleanly disconnected from the dbus with a status=0 message",
+        "x": 250,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "91ac41b9b2019626",
+        "type": "mqtt out",
+        "z": "9cb7e68af6628fae",
+        "name": "",
+        "topic": "",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "2712849475d6de23",
+        "x": 470,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "c41eca8c173c5e63",
+        "type": "inject",
+        "z": "9cb7e68af6628fae",
+        "name": "Disconnect",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 90,
+        "y": 300,
+        "wires": [
+            [
+                "94bf399bbd925eef"
+            ]
+        ]
+    },
+    {
+        "id": "94bf399bbd925eef",
+        "type": "change",
+        "z": "9cb7e68af6628fae",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "payload",
+                "pt": "msg",
+                "to": "{\t   \"clientId\": \"starlink01\",\t   \"connected\": 0,\t   \"version\": \"v1.0.0\",\t   \"services\": {\t       \"gps1\": \"gps\"\t   } \t}",
+                "tot": "jsonata"
+            },
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "device/starlink01/Status",
+                "tot": "str"
+            },
+            {
+                "t": "delete",
+                "p": "portalId",
+                "pt": "global"
+            },
+            {
+                "t": "delete",
+                "p": "gps1Id",
+                "pt": "flow"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 280,
+        "y": 300,
+        "wires": [
+            [
+                "91ac41b9b2019626",
+                "31d12412ddd333b4"
+            ]
+        ]
+    },
+    {
+        "id": "31d12412ddd333b4",
+        "type": "debug",
+        "z": "9cb7e68af6628fae",
+        "name": "Disconnect",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 450,
+        "y": 380,
+        "wires": []
+    },
+    {
+        "id": "a0543c07e585af09",
+        "type": "grpc-server",
+        "port": "9200",
+        "name": "Dishy",
+        "server": "dishy.starlink.com",
+        "protoFile": "syntax = \"proto3\";\n\npackage SpaceX.API.Device;\n\nenum PositionSource {\n  AUTO = 0;\n  NONE = 1;\n  UT_INFO = 2;\n  EXTERNAL = 3;\n  GPS = 4;\n  STARLINK = 5;\n  GNC_GPS = 6;\n  GNC_PNT = 7;\n  GNC_FUSED = 8;\n  GNC_RAW = 9;\n}\n\nmessage LLAPosition {\n  double lat = 1;\n  double lon = 2;\n  double alt = 3;\n}\n\nmessage GetLocationRequest {\n  PositionSource source = 1;\n}\nmessage GetLocationResponse {\n  LLAPosition lla = 1;\n  PositionSource source = 3;\n  double sigma_m = 4;\n  reserved 2;\n  reserved \"ecef\";\n}\n\nmessage Status {\n  int32 code = 1;\n  string message = 2;\n}\n\n    service Device {\n        rpc Handle ( Request ) returns ( Response );\n}\n\nmessage Request {\n  uint64 id = 1;\n  string target_id = 13;\n  uint64 epoch_id = 14;\n  GetLocationRequest get_location =1017;\n}\n\nmessage Response {\n  uint64 id = 1;\n  Status status = 2;\n  uint64 api_version = 3;\n  GetLocationResponse get_location =1017;\n}",
+        "ca": "",
+        "chain": "",
+        "key": "",
+        "mutualTls": false,
+        "ssl": false,
+        "selfsigned": false,
+        "localServer": false
+    },
+    {
+        "id": "2712849475d6de23",
+        "type": "mqtt-broker",
+        "name": "Cerbo MQTT",
+        "broker": "localhost",
+        "port": "1883",
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    }
+]
