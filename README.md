@@ -1,6 +1,6 @@
 This project includes a Node-Red flow that runs on a Victron Cerbo GX to pull gps data from a local Starlink dish and publish it to the VRM portal for logging and display. This is far from polished so any recommendations are welcome, though they might be ignored. ;-)
-<img width="217" alt="image" src="https://github.com/brik2k/VictronStarlinkGPS/assets/19332985/9876da08-3b03-4ae6-831e-9a196c912dbb">
 
+<img width="403" alt="image" src="https://github.com/brik2k/VictronStarlinkGPS/assets/19332985/9af460fb-8e8b-4bc8-aec3-090dc9436a29">
 
 This flow does the following:
  1. Uses freakent's dbus-mqtt-devices driver (https://github.com/freakent/dbus-mqtt-devices) to register a 'starlink01' device with a gps service on the Victron dbus. 
