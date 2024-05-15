@@ -10,5 +10,6 @@ This flow does the following:
 Things to tweak:
  1. The grpc .proto file configuration is probably a mess and should be cleaned up by someone who knows what they're doing.
  2. Probably need to add some error handling to the grpc call process.
+ 3. There the likely many ways to optimize the code for parsing and publishing the gps data to MQTT. 
 
 <img width="660" alt="image" src="https://github.com/brik2k/VictronStarlinkGPS/assets/19332985/53419eb2-8118-4eda-bab7-7866e49ef594">
